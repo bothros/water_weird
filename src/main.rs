@@ -2,8 +2,8 @@
 
 extern crate rustbox;
 
-use std::char;
 use std::iter;
+use std::collections::HashMap;
 
 trait DisplayCell {
     fn foreground(&self) -> Option<u32>;
@@ -51,74 +51,143 @@ impl DisplayCell for StoneOrNotCell {
     }
 }
 
-fn display<C: DisplayCell>(map: &[ &[ &[C] ] ]) { //3d array of cells, first x, then y, then z
-    let mut char_set = false;
-
-    for (horizontal_slice, x) in map.iter().zip(iter::count(0u, 1)) {
-        for (column, y) in horizontal_slice.iter().zip(iter::count(0u, 1)) {
-            let (display_char, display_fore, display_back) = column_repr(*column);
-            rustbox::change_cell(x, y, display_char, display_fore, display_back);
+fn display<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, topz: u8, width: u8, height: u8) {
+    for x in range(0, width) {
+        for y in range(0, height) {
+            let (display_char, display_fore, display_back) = column_repr(map, default, x, y, topz);
+            rustbox::change_cell(x as uint, y as uint, display_char, display_fore, display_back);
         }
     }
 }
-
-fn column_repr<C: DisplayCell>(column: &[C]) -> (u32, u16, u16) {
-    let (ch, fore) = column_fore(column);
-    let back = column_back(column);
+    
+fn column_repr<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u8, y: u8, topz: u8) -> (u32, u16, u16) {
+    let (ch, fore) = column_fore(map, default, x, y, topz);
+    let back = column_back(map, default, x, y, topz);
     (ch, fore, back)
 }
 
-fn column_fore<C: DisplayCell>(column: &[C]) -> (u32, u16) {
-    match column[0].foreground() {
-        Some(ch) => (ch, column[0].color_in_foreground()), 
+fn column_fore<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u8, y: u8, topz: u8) -> (u32, u16) {
+    let firstcell = match map.get(&(x, y, topz)) {
+        Some(c) => c,
+        None => default
+    };
+    match firstcell.foreground() {
+        Some(ch) => (ch, firstcell.color_in_foreground()),
         None => {
-            match column[1].floor() {
-                Some(ch) => (ch, column[1].color_in_foreground()),
-                None => (' ' as u32, 0u16)
+            let secondcell = match map.get(&(x, y, topz+1)) {
+                Some(c) => c,
+                None => default
+            };
+            match secondcell.floor() {
+                Some(ch) => (ch, secondcell.color_in_foreground()),
+                None => (' ' as u32, 7u16)
             }
         }
     }
 }
 
-fn column_back<C: DisplayCell>(column: &[C]) -> u16 {
-    let mut coliter = column.iter();
-    
-    match coliter.next() {
-        Some(firstcell) => {
-            if !firstcell.occludes_background() {
-                for cell in coliter {
-                    match cell.color_in_background() {
-                        Some(color) => { return color; },
-                        None => {continue; }
-                    }
-                }
-            } else {
-                return 0u16;
-            }
-        },
-        None => { return 0u16; }
+fn column_back<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u8, y: u8, topz: u8) -> u16 {
+    let depthlimit = 255u8;
+
+    let firstcell = match map.get(&(x, y, topz)) {
+        Some(c) => c,
+        None => default
+    };
+    if !firstcell.occludes_background() {
+        for z in iter::range(topz+1, depthlimit) {
+            let cell = match map.get(&(x, y, z)) {
+                Some(c) => c,
+                None => default
+            };
+            match cell.color_in_background() {
+                Some(color) => { return color; },
+                None => { continue; }
+            };
+        }
+    } else {
+        return 0u16;
     };
 
-    0u16 //we shouldn't ever get here
+    0u16
 }
 
-fn stonemap<'a, 'b, 'c>(bitmap: &'a [ &'b [ &'c [u8] ] ]) -> &'a [ &'b [ &'c [StoneOrNotCell] ] ] {
-    bitmap.iter().map( |horizontal_slice| {
-        horizontal_slice.iter().map( |column| {
-            column.iter().map( |bit| {
-                match *bit {
-                    1 => StoneOrNotCell::Stone,
-                    0 => StoneOrNotCell::Empty,
-                    _ => StoneOrNotCell::Empty
-                }
-            }).collect()
-        }).collect()
-    }).collect()
+fn stonemap(bitmap: HashMap<(u8, u8, u8), u8>) -> HashMap<(u8, u8, u8), StoneOrNotCell> {
+    let mut returnmap: HashMap<(u8, u8, u8), StoneOrNotCell> = HashMap::new();
+
+    returnmap.insert((0, 0, 0), StoneOrNotCell::Stone);
+
+    for (coords, bit) in bitmap.iter() {
+        let cell = match *bit {
+            1 => StoneOrNotCell::Stone,
+            0 => StoneOrNotCell::Empty,
+            _ => StoneOrNotCell::Empty
+        };
+        returnmap.insert(*coords, cell);
+    };
+
+    returnmap
+}
+
+#[cfg(test)]
+mod test {
+    use std::collections::HashMap;
+    use super::{
+        column_fore,
+        column_back,
+        column_repr,
+        StoneOrNotCell
+    };
+
+    fn setupmap() -> HashMap<(u8, u8, u8), StoneOrNotCell> {
+        let mut m = HashMap::new();
+        m.insert((0, 0, 0), StoneOrNotCell::Stone);
+        m.insert((1, 0, 1), StoneOrNotCell::Stone);
+        m.insert((2, 0, 5), StoneOrNotCell::Stone);
+        m
+    }
+
+    #[test]
+    fn test_column_fore() {
+        let m = setupmap();
+        assert_eq!((35, 254), column_fore(&m, &StoneOrNotCell::Empty, 0, 0, 0));
+        assert_eq!((46, 254), column_fore(&m, &StoneOrNotCell::Empty, 1, 0, 0));
+        assert_eq!((32, 0), column_fore(&m, &StoneOrNotCell::Empty, 2, 0, 0));
+        assert_eq!((32, 0), column_fore(&m, &StoneOrNotCell::Empty, 3, 0, 0));
+    }
+
+    #[test]
+    fn test_column_back() {
+        let m = setupmap();
+        assert_eq!(0, column_back(&m, &StoneOrNotCell::Empty, 0, 0, 0));
+        assert_eq!(243, column_back(&m, &StoneOrNotCell::Empty, 1, 0, 0));
+        assert_eq!(243, column_back(&m, &StoneOrNotCell::Empty, 2, 0, 0));
+        assert_eq!(0, column_back(&m, &StoneOrNotCell::Empty, 3, 0, 0));
+    }
+
+    #[test]
+    fn test_column_repr() {
+        let m = setupmap();
+        assert_eq!((35, 254, 0), column_repr(&m, &StoneOrNotCell::Empty, 0, 0, 0));
+        assert_eq!((46, 254, 243), column_repr(&m, &StoneOrNotCell::Empty, 1, 0, 0));
+        assert_eq!((32, 0, 243), column_repr(&m, &StoneOrNotCell::Empty, 2, 0, 0));
+        assert_eq!((32, 0, 0), column_repr(&m, &StoneOrNotCell::Empty, 3, 0, 0));
+    }
 }
 
 fn main() {
-    let x = &[StoneOrNotCell::Empty, StoneOrNotCell::Stone];
-    println!("{}", column_fore(x));
-    println!("{}", column_back(x));
-    println!("{}", column_repr(x));
+    let mut m = HashMap::new();
+    m.insert((0, 0, 0), StoneOrNotCell::Stone);
+    m.insert((1, 0, 1), StoneOrNotCell::Stone);
+    m.insert((2, 0, 5), StoneOrNotCell::Stone);
+
+    rustbox::init();
+    rustbox::mode_256();
+
+    display(&m, &StoneOrNotCell::Empty, 0, 5, 5);
+
+    rustbox::present();
+
+    std::io::timer::sleep(std::time::Duration::milliseconds(1000));
+
+    rustbox::shutdown();
 }
