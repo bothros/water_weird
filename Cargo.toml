@@ -1,0 +1,10 @@
+[package]
+
+name = "water_weird"
+version = "0.0.1"
+authors = ["Adams Tower <herpestesfantasticus@gmail.com>"]
+
+[dependencies.rustbox]
+# git = "https://github.com/gchp/rustbox.git"
+git = "https://github.com/bothros/rustbox.git"
+
