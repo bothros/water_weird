@@ -151,8 +151,8 @@ mod test {
         let m = setupmap();
         assert_eq!((35, 254), column_fore(&m, &StoneOrNotCell::Empty, 0, 0, 0));
         assert_eq!((46, 254), column_fore(&m, &StoneOrNotCell::Empty, 1, 0, 0));
-        assert_eq!((32, 0), column_fore(&m, &StoneOrNotCell::Empty, 2, 0, 0));
-        assert_eq!((32, 0), column_fore(&m, &StoneOrNotCell::Empty, 3, 0, 0));
+        assert_eq!((32, 7), column_fore(&m, &StoneOrNotCell::Empty, 2, 0, 0));
+        assert_eq!((32, 7), column_fore(&m, &StoneOrNotCell::Empty, 3, 0, 0));
     }
 
     #[test]
@@ -169,8 +169,8 @@ mod test {
         let m = setupmap();
         assert_eq!((35, 254, 0), column_repr(&m, &StoneOrNotCell::Empty, 0, 0, 0));
         assert_eq!((46, 254, 243), column_repr(&m, &StoneOrNotCell::Empty, 1, 0, 0));
-        assert_eq!((32, 0, 243), column_repr(&m, &StoneOrNotCell::Empty, 2, 0, 0));
-        assert_eq!((32, 0, 0), column_repr(&m, &StoneOrNotCell::Empty, 3, 0, 0));
+        assert_eq!((32, 7, 243), column_repr(&m, &StoneOrNotCell::Empty, 2, 0, 0));
+        assert_eq!((32, 7, 0), column_repr(&m, &StoneOrNotCell::Empty, 3, 0, 0));
     }
 }
 
