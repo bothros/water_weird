@@ -2,6 +2,7 @@ extern crate rustbox;
 
 use std::iter;
 use std::char;
+use std::cmp;
 use std::collections::HashMap;
 
 pub trait DisplayCell {
@@ -16,14 +17,19 @@ pub mod stone;
 pub mod diamond;
 pub mod weird;
 
-pub fn view<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, width: u8, height: u8, depth: u8) {
+pub fn view<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, width: u8, height: u8, depth: u8, viewdistance: Option<u8>) {
     rustbox::init();
     rustbox::mode_256();
 
     let mut z = 0u8;
 
     'display: loop {
-        display(map, default, width, height, z, depth);
+        let bottomz = match viewdistance {
+            Some(dz) => { cmp::min(z+dz, depth) },
+            None     => { depth }
+        };
+
+        display(map, default, width, height, z, bottomz);
         rustbox::present();
 
         'poll: loop {
