@@ -14,7 +14,7 @@ impl DisplayCell for StoneDiamondCell {
     fn foreground(&self) -> Option<u32> {
         match *self {
             StoneDiamondCell::Stone => Some('#' as u32),
-            StoneDiamondCell::Diamond => Some(0x2666 as u32),
+            StoneDiamondCell::Diamond => Some(0x2666 as u32), // unicode black diamond
             StoneDiamondCell::Empty => None,
         }
     }
