@@ -51,18 +51,18 @@ impl DisplayCell for StoneOrNotCell {
     }
 }
 
-fn display<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, topz: u8, width: u8, height: u8) {
+fn display<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, width: u8, height: u8, topz: u8, bottomz: u8) {
     for x in range(0, width) {
         for y in range(0, height) {
-            let (display_char, display_fore, display_back) = column_repr(map, default, x, y, topz);
+            let (display_char, display_fore, display_back) = column_repr(map, default, x, y, topz, bottomz);
             rustbox::change_cell(x as uint, y as uint, display_char, display_fore, display_back);
         }
     }
 }
     
-fn column_repr<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u8, y: u8, topz: u8) -> (u32, u16, u16) {
+fn column_repr<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u8, y: u8, topz: u8, bottomz: u8) -> (u32, u16, u16) {
     let (ch, fore) = column_fore(map, default, x, y, topz);
-    let back = column_back(map, default, x, y, topz);
+    let back = column_back(map, default, x, y, topz, bottomz);
     (ch, fore, back)
 }
 
@@ -86,15 +86,13 @@ fn column_fore<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u
     }
 }
 
-fn column_back<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u8, y: u8, topz: u8) -> u16 {
-    let depthlimit = 255u8;
-
+fn column_back<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u8, y: u8, topz: u8, bottomz: u8) -> u16 {
     let firstcell = match map.get(&(x, y, topz)) {
         Some(c) => c,
         None => default
     };
     if !firstcell.occludes_background() {
-        for z in iter::range(topz+1, depthlimit) {
+        for z in iter::range(topz+1, bottomz+1) {
             let cell = match map.get(&(x, y, z)) {
                 Some(c) => c,
                 None => default
@@ -141,19 +139,19 @@ mod test {
     #[test]
     fn test_column_back() {
         let m = setupmap();
-        assert_eq!(0, column_back(&m, &StoneOrNotCell::Empty, 0, 0, 0));
-        assert_eq!(243, column_back(&m, &StoneOrNotCell::Empty, 1, 0, 0));
-        assert_eq!(243, column_back(&m, &StoneOrNotCell::Empty, 2, 0, 0));
-        assert_eq!(0, column_back(&m, &StoneOrNotCell::Empty, 3, 0, 0));
+        assert_eq!(0, column_back(&m, &StoneOrNotCell::Empty, 0, 0, 0, 10));
+        assert_eq!(243, column_back(&m, &StoneOrNotCell::Empty, 1, 0, 0, 10));
+        assert_eq!(243, column_back(&m, &StoneOrNotCell::Empty, 2, 0, 0, 10));
+        assert_eq!(0, column_back(&m, &StoneOrNotCell::Empty, 3, 0, 0, 10));
     }
 
     #[test]
     fn test_column_repr() {
         let m = setupmap();
-        assert_eq!((35, 254, 0), column_repr(&m, &StoneOrNotCell::Empty, 0, 0, 0));
-        assert_eq!((46, 254, 243), column_repr(&m, &StoneOrNotCell::Empty, 1, 0, 0));
-        assert_eq!((32, 7, 243), column_repr(&m, &StoneOrNotCell::Empty, 2, 0, 0));
-        assert_eq!((32, 7, 0), column_repr(&m, &StoneOrNotCell::Empty, 3, 0, 0));
+        assert_eq!((35, 254, 0), column_repr(&m, &StoneOrNotCell::Empty, 0, 0, 0, 10));
+        assert_eq!((46, 254, 243), column_repr(&m, &StoneOrNotCell::Empty, 1, 0, 0, 10));
+        assert_eq!((32, 7, 243), column_repr(&m, &StoneOrNotCell::Empty, 2, 0, 0, 10));
+        assert_eq!((32, 7, 0), column_repr(&m, &StoneOrNotCell::Empty, 3, 0, 0, 10));
     }
 }
 
@@ -166,7 +164,7 @@ fn main() {
     rustbox::init();
     rustbox::mode_256();
 
-    display(&m, &StoneOrNotCell::Empty, 0, 5, 5);
+    display(&m, &StoneOrNotCell::Empty, 5, 5, 0, 10);
 
     rustbox::present();
 
