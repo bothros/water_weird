@@ -3,8 +3,6 @@
 extern crate rustbox;
 extern crate water_weird;
 
-use std::iter;
-use std::collections::HashMap;
 use water_weird::cell;
 
 fn main() {
