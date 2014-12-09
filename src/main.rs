@@ -111,23 +111,6 @@ fn column_back<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u
     0u16
 }
 
-fn stonemap(bitmap: HashMap<(u8, u8, u8), u8>) -> HashMap<(u8, u8, u8), StoneOrNotCell> {
-    let mut returnmap: HashMap<(u8, u8, u8), StoneOrNotCell> = HashMap::new();
-
-    returnmap.insert((0, 0, 0), StoneOrNotCell::Stone);
-
-    for (coords, bit) in bitmap.iter() {
-        let cell = match *bit {
-            1 => StoneOrNotCell::Stone,
-            0 => StoneOrNotCell::Empty,
-            _ => StoneOrNotCell::Empty
-        };
-        returnmap.insert(*coords, cell);
-    };
-
-    returnmap
-}
-
 #[cfg(test)]
 mod test {
     use std::collections::HashMap;
