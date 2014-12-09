@@ -1,6 +1,7 @@
 extern crate rustbox;
 
 use std::iter;
+use std::char;
 use std::collections::HashMap;
 
 pub trait DisplayCell {
@@ -14,6 +15,44 @@ pub trait DisplayCell {
 pub mod stone;
 pub mod diamond;
 pub mod weird;
+
+pub fn view<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, width: u8, height: u8, depth: u8) {
+    rustbox::init();
+    rustbox::mode_256();
+
+    let mut z = 0u8;
+
+    'display: loop {
+        display(map, default, width, height, z, depth);
+        rustbox::present();
+
+        'poll: loop {
+            match rustbox::poll_event() {
+                rustbox::Event::KeyEvent(_, _, ch) => {
+                    match char::from_u32(ch) {
+                        Some('q') => { break 'display; }, //quit
+                        Some('>') => { //look deeper
+                            if z < depth-1 {
+                                z += 1;
+                                break 'poll;
+                            };
+                        },
+                        Some('<') => { //look shallower
+                            if z > 0 {
+                                z -= 1;
+                                break 'poll;
+                            };
+                        },
+                        _ => {}
+                    }
+                },
+                _ => {}
+            }
+        }
+    }
+    
+    rustbox::shutdown();
+}
 
 pub fn display<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, width: u8, height: u8, topz: u8, bottomz: u8) {
     for x in range(0, width) {
@@ -133,5 +172,3 @@ mod test {
         assert_eq!((0x2666, 51, 243), column_repr(&m, &StoneDiamondCell::Empty, 2, 1, 0, 10));
     }
 }
-
-
