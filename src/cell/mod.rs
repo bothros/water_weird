@@ -7,3 +7,4 @@ pub trait DisplayCell {
 }
 
 pub mod stone;
+pub mod diamond;
