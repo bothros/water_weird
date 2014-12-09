@@ -2,6 +2,8 @@ use std::rand;
 use std::collections::HashMap;
 use super::DisplayCell;
 
+/// # StoneDiamondCell
+/// Slightly more complicated than the StoneOrNotCell, it can have a non-occluding diamond.
 pub enum StoneDiamondCell {
     Empty,
     Stone,

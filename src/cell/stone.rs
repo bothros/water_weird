@@ -2,6 +2,8 @@ use std::rand;
 use std::collections::HashMap;
 use super::DisplayCell;
 
+/// # StoneOrNotCell
+/// Pretty much the simplest possible DisplayCell, it's either occluding Stone, or invisible Empty.
 pub enum StoneOrNotCell {
     Empty,
     Stone,
