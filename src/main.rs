@@ -103,7 +103,10 @@ fn column_back<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u
             };
         }
     } else {
-        return 0u16;
+        return match firstcell.color_in_background() {
+            Some(color) => { color },
+            None => 0u16
+        };
     };
 
     0u16
@@ -139,7 +142,7 @@ mod test {
     #[test]
     fn test_column_back() {
         let m = setupmap();
-        assert_eq!(0, column_back(&m, &StoneOrNotCell::Empty, 0, 0, 0, 10));
+        assert_eq!(243, column_back(&m, &StoneOrNotCell::Empty, 0, 0, 0, 10));
         assert_eq!(243, column_back(&m, &StoneOrNotCell::Empty, 1, 0, 0, 10));
         assert_eq!(243, column_back(&m, &StoneOrNotCell::Empty, 2, 0, 0, 10));
         assert_eq!(0, column_back(&m, &StoneOrNotCell::Empty, 3, 0, 0, 10));
@@ -148,7 +151,7 @@ mod test {
     #[test]
     fn test_column_repr() {
         let m = setupmap();
-        assert_eq!((35, 254, 0), column_repr(&m, &StoneOrNotCell::Empty, 0, 0, 0, 10));
+        assert_eq!((35, 254, 243), column_repr(&m, &StoneOrNotCell::Empty, 0, 0, 0, 10));
         assert_eq!((46, 254, 243), column_repr(&m, &StoneOrNotCell::Empty, 1, 0, 0, 10));
         assert_eq!((32, 7, 243), column_repr(&m, &StoneOrNotCell::Empty, 2, 0, 0, 10));
         assert_eq!((32, 7, 0), column_repr(&m, &StoneOrNotCell::Empty, 3, 0, 0, 10));
