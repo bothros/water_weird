@@ -13,6 +13,7 @@ pub trait DisplayCell {
 
 pub mod stone;
 pub mod diamond;
+pub mod weird;
 
 pub fn display<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, width: u8, height: u8, topz: u8, bottomz: u8) {
     for x in range(0, width) {
