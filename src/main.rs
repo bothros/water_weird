@@ -3,6 +3,7 @@
 extern crate rustbox;
 
 use std::iter;
+use std::rand;
 use std::collections::HashMap;
 
 trait DisplayCell {
@@ -112,6 +113,15 @@ fn column_back<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u
     0u16
 }
 
+fn random_stone_map(numstones: uint, height: u8, width: u8, depth: u8) -> HashMap<(u8, u8, u8), StoneOrNotCell> {
+    let mut m = HashMap::new();
+    for _ in range(0u, numstones) {
+        let k = (rand::random::<u8>() % height, rand::random::<u8>() % width, rand::random::<u8>() % depth);
+        m.insert(k, StoneOrNotCell::Stone);
+    };
+    m
+}
+
 #[cfg(test)]
 mod test {
     use std::collections::HashMap;
@@ -159,15 +169,12 @@ mod test {
 }
 
 fn main() {
-    let mut m = HashMap::new();
-    m.insert((0, 0, 0), StoneOrNotCell::Stone);
-    m.insert((1, 0, 1), StoneOrNotCell::Stone);
-    m.insert((2, 0, 5), StoneOrNotCell::Stone);
+    let m = random_stone_map(5000, 80, 50, 10);
 
     rustbox::init();
     rustbox::mode_256();
 
-    display(&m, &StoneOrNotCell::Empty, 5, 5, 0, 10);
+    display(&m, &StoneOrNotCell::Empty, 80, 50, 0, 10);
 
     rustbox::present();
 
