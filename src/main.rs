@@ -1,58 +1,14 @@
 #![feature(if_let)]
 
 extern crate rustbox;
+extern crate water_weird;
 
 use std::iter;
-use std::rand;
 use std::collections::HashMap;
+use water_weird::cell;
 
-trait DisplayCell {
-    fn foreground(&self) -> Option<u32>;
-    fn floor(&self) -> Option<u32>;
-    fn color_in_background(&self) -> Option<u16>;
-    fn color_in_foreground(&self) -> u16;
-    fn occludes_background(&self) -> bool;
-}
 
-enum StoneOrNotCell {
-    Empty,
-    Stone,
-}
-
-impl DisplayCell for StoneOrNotCell {
-    fn foreground(&self) -> Option<u32> {
-        match *self {
-            StoneOrNotCell::Stone => Some('#' as u32),
-            StoneOrNotCell::Empty => None
-        }
-    }
-    fn floor(&self) -> Option<u32> {
-        match *self {
-            StoneOrNotCell::Stone => Some('.' as u32),
-            StoneOrNotCell::Empty => None
-        }
-    }
-    fn color_in_background(&self) -> Option<u16> {
-        match *self {
-            StoneOrNotCell::Stone => Some(243), //medium grey
-            StoneOrNotCell::Empty => None
-        }
-    }
-    fn color_in_foreground(&self) -> u16 {
-        match *self {
-            StoneOrNotCell::Stone => 254, //light grey
-            _ => 0, //should never be used.
-        }
-    }
-    fn occludes_background(&self) -> bool {
-        match *self {
-            StoneOrNotCell::Stone => true,
-            StoneOrNotCell::Empty => false
-        }
-    }
-}
-
-fn display<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, width: u8, height: u8, topz: u8, bottomz: u8) {
+fn display<C: cell::DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, width: u8, height: u8, topz: u8, bottomz: u8) {
     for x in range(0, width) {
         for y in range(0, height) {
             let (display_char, display_fore, display_back) = column_repr(map, default, x, y, topz, bottomz);
@@ -61,13 +17,13 @@ fn display<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, width: u
     }
 }
     
-fn column_repr<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u8, y: u8, topz: u8, bottomz: u8) -> (u32, u16, u16) {
+fn column_repr<C: cell::DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u8, y: u8, topz: u8, bottomz: u8) -> (u32, u16, u16) {
     let (ch, fore) = column_fore(map, default, x, y, topz);
     let back = column_back(map, default, x, y, topz, bottomz);
     (ch, fore, back)
 }
 
-fn column_fore<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u8, y: u8, topz: u8) -> (u32, u16) {
+fn column_fore<C: cell::DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u8, y: u8, topz: u8) -> (u32, u16) {
     let firstcell = match map.get(&(x, y, topz)) {
         Some(c) => c,
         None => default
@@ -87,7 +43,7 @@ fn column_fore<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u
     }
 }
 
-fn column_back<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u8, y: u8, topz: u8, bottomz: u8) -> u16 {
+fn column_back<C: cell::DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u8, y: u8, topz: u8, bottomz: u8) -> u16 {
     let firstcell = match map.get(&(x, y, topz)) {
         Some(c) => c,
         None => default
@@ -113,23 +69,14 @@ fn column_back<C: DisplayCell>(map: &HashMap<(u8, u8, u8), C>, default: &C, x: u
     0u16
 }
 
-fn random_stone_map(numstones: uint, height: u8, width: u8, depth: u8) -> HashMap<(u8, u8, u8), StoneOrNotCell> {
-    let mut m = HashMap::new();
-    for _ in range(0u, numstones) {
-        let k = (rand::random::<u8>() % height, rand::random::<u8>() % width, rand::random::<u8>() % depth);
-        m.insert(k, StoneOrNotCell::Stone);
-    };
-    m
-}
-
 #[cfg(test)]
 mod test {
     use std::collections::HashMap;
+    use water_weird::cell::stone::StoneOrNotCell;
     use super::{
         column_fore,
         column_back,
         column_repr,
-        StoneOrNotCell
     };
 
     fn setupmap() -> HashMap<(u8, u8, u8), StoneOrNotCell> {
@@ -169,12 +116,12 @@ mod test {
 }
 
 fn main() {
-    let m = random_stone_map(5000, 80, 50, 10);
+    let m = cell::stone::random_stone_map(5000, 80, 50, 10);
 
     rustbox::init();
     rustbox::mode_256();
 
-    display(&m, &StoneOrNotCell::Empty, 80, 50, 0, 10);
+    display(&m, &cell::stone::StoneOrNotCell::Empty, 80, 50, 0, 10);
 
     rustbox::present();
 
